@@ -22,6 +22,6 @@ cd ./Qianhong/ChromHMM_file/${acc}
 
 java -mx10G -jar ./Qianhong/ChromHMM/ChromHMM.jar BinarizeBam ./Qianhong/ChromHMM/CHROMSIZES/danRer11.txt . cell_mark_filetable.txt binary_bam_out
 
-java -mx10G -jar ./Qianhong/ChromHMM/ChromHMM.jar LearnModel -p 10 -printposterior -printstatebyline binary_bam_out ChromHMM_out_10 $state_num danRer11
+java -mx10G -jar ./Qianhong/ChromHMM/ChromHMM.jar LearnModel -p 10 -printposterior -printstatebyline binary_bam_out ChromHMM_out $state_num danRer11
 
 set +x
