@@ -12,6 +12,6 @@ done < ./Qianhong/SRR_Acc_List.txt
 
 acc=${arr[$SLURM_ARRAY_TASK_ID]}
 
-cd ./Qianhong/fastq_k9
+cd ./Qianhong/fastq
 
 fasterq-dump ${acc} -t ./Qianhong/fastq
