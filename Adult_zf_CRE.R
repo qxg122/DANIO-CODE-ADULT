@@ -299,16 +299,16 @@ edges1 <- edges[!is.na(edges$Value), ]
 rownames(edges1) <- 1:nrow(edges1)
 edges1$IDsource <- match(edges1$Longpec_Element, nodes$name)-1
 edges1$IDtarget <- match(edges1$Brain_Element, nodes$name)-1
-sankey <- sankeyNetwork(Links = edges1, # 输入数据1
-              Nodes = nodes, # 输入数据2
-              Source = "IDsource", # 来源变量
-              Target = "IDtarget", # 接受变量
-              Value = "Value", # 关系权重
-              NodeID = "name", #节点名称
-              LinkGroup = 'Longpec_Element', # 颜色分组
-              sinksRight = F, # 设置最后一层标签位置在左/右
-              nodeWidth = 10, #节点格子宽度
-              fontSize = 18, #文本标签字体的大小
+sankey <- sankeyNetwork(Links = edges1,
+              Nodes = nodes,
+              Source = "IDsource",
+              Target = "IDtarget",
+              Value = "Value",
+              NodeID = "name",
+              LinkGroup = 'Longpec_Element',
+              sinksRight = F,
+              nodeWidth = 10,
+              fontSize = 18,
               nodePadding = 10)
 htmlwidgets::onRender(sankey, jsCode = '
   function(el, x) {
