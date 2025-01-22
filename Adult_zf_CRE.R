@@ -18,12 +18,7 @@ library(RColorBrewer)
 library(BSgenome.Drerio.UCSC.danRer11)
 
 
-# Figure 1
-# DANIO-CODE datasets are obtained from https://github.com/DANIO-CODE/DANIO-CODE_Data_analysis/blob/master/Figures/Figure1/DCC-annotations-2021-05.csv
-# This adult zebrafish track hub can be accessed through the URL https://data.cyverse.org/dav-anon/iplant/home/guanguan/Adult_zebrafish_hub/hub.txt in the UCSC Genome Browser 
-
-
-# Figure 2
+# Figure 1b
 # Read the ChromHMM results
 setwd("./ChromHMM_file/")
 tissue_names <- c("blood", "brain", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")
@@ -123,6 +118,8 @@ allPeaks_annotation <- lapply(names(allPeaks), function(x) {
 })
 names(allPeaks_annotation) <- tissue_names
 
+
+# Supplementary Figure 1b
 # Prepare the CRE annotation track hub 
 paper_colors <- c("#1F78B4", "#33A02C", "#B2DF8A", "#E31A1C", "#FB9A99", 
                   "#FFA500", "#654321","#7B68EE", "#800080", "#A1A2A3")
@@ -143,7 +140,10 @@ lapply(names(tissueExport), function(name){
          str_c("./Adult_Zebrafish_CREs_Annotation/", name, "_PADREs_formal_idr_github_10_chrstart.bed"))
 })
 system("cd ./Adult_Zebrafish_CREs_Annotation/; ls *_PADREs_formal_idr_github_10_chrstart.bed | while read id; do sort -k1,1 -k2n $id > $id.sorted.bed; done")
+# This adult zebrafish track hub can be accessed through the URL https://data.cyverse.org/dav-anon/iplant/home/guanguan/Adult_zebrafish_hub/hub.txt in the UCSC Genome Browser
 
+
+# Figure 1c
 # Plot the number of different CREs across all adult tissues
 segments <- list()
 for(tissue in tissue_names) {
@@ -192,6 +192,8 @@ plotSegmentNumbers <- function(segments,
 }
 plotSegmentNumbers(segments, show_legend = T) + ylim(0, 20000)
 
+
+# Figure 1d
 # Validate CREs annotation by the distribution of annotated promoter on Ensembl reference genome
 txDb <- makeTxDbFromGFF('https://hgdownload.soe.ucsc.edu/goldenPath/danRer11/bigZips/genes/danRer11.ensGene.gtf.gz')
 brain_promoters <- segments$brain[segments$brain$name == '1_TssA']
@@ -214,112 +216,7 @@ annotatedPeaksGR$geneSymbol %>% unique() %>% length()
 annotatedPeaksGR[!is.na(annotatedPeaksGR$geneSymbol) & annotatedPeaksGR$annotation == 'Promoter']
 
 
-# Figure 3
-# LOLA: The enrichment of embryonic elements in adult elements
-regionDB = loadRegionDB("./Adult_Zebrafish_CREs_Annotation/LOLA_github/")
-regionSetA = readBed('./Adult_Zebrafish_CREs_Annotation/Hpf12_PADREs.bb.bed')
-regionSetB = readBed('./Adult_Zebrafish_CREs_Annotation/Prim5_PADREs.bb.bed')
-regionSetC = readBed('./Adult_Zebrafish_CREs_Annotation/LongPec_PADREs.bb.bed')
-userSets = GRangesList(regionSetA, regionSetB, regionSetC)
-Universe = unlist(userSets)
-locResultsRestricted = runLOLA(userSets, Universe, regionDB, cores=1)
-plotTopLOLAEnrichments(locResultsRestricted)
-locResultsRestricted$cols <- with(locResultsRestricted, factor(ifelse(pValueLog < 10,"<10", 
-                                                                      ifelse(pValueLog >= 10 & pValueLog <= 100, "10-100", ">100")),
-                                                               levels = c("<10", "10-100", ">100")))
-tissue_order <- c("blood_elements", "brain_elements", "colon_elements", "heart_elements", "intestine_elements", "kidney_elements", "liver_elements", "muscle_elements", "skin_elements", "spleen_elements", "testis_elements")
-locResultsRestricted$description <- factor(locResultsRestricted$description, levels = desired_order)
-locResultsRestricted$userSet <- ifelse(locResultsRestricted$userSet == 1, "Hpf12",
-                                       ifelse(locResultsRestricted$userSet == 2, "Prim5",
-                                              ifelse(locResultsRestricted$userSet == 3, "LongPec", locResultsRestricted$userSet)))
-stage_reorder <- c("Hpf12", "Prim5", "LongPec")
-locResultsRestricted$userSet <- factor(locResultsRestricted$userSet, levels = stage_reorder)
-ggplot(locResultsRestricted, aes(x = support/size, y = description)) +
-  geom_point(aes(size = support, color = as.factor(userSet))) +
-  scale_colour_manual("Embryonic stages", values = c("gray", "dark blue", "red")) +
-  xlim(0, 1.02) +
-  labs(size = "Number of shared elements", shape = "Embryonic stages", x = 'EnrichmentRatio', y = 'Adult tissue', title = 'Enrichment of embryonic CREs in adult CREs') +
-  theme_bw() +
-  theme(axis.text.y = element_text(size = 10, face = 'bold'),
-        axis.title.y = element_text(size = 12, face = 'bold'),
-        title = element_text(size = 12, face = 'bold'),
-        axis.text.x = element_text(size = 10, face = 'bold'),
-        axis.title.x = element_text(size = 12, face = 'bold'),
-        legend.title = element_text(size = 12, face = "bold"),
-        legend.text =  element_text(size = 10)
-  )
-
-# UpsetR: The intersections of reused embryonic elements across adult tissues.
-peakFiles <- list.files("./Adult_Zebrafish_CREs_Annotation", pattern = '_PADREs_formal_idr_github_10_chrstart.bed.sorted.bed', full.names = T)
-peakGranges <- lapply(peakFiles, rtracklayer::import)
-names(peakGranges) <- tissue_names
-embryo_PADREs_file <- list.files('./Adult_Zebrafish_CREs_Annotation', pattern = '_PADREs.bb.bed', full.names = TRUE)
-names(embryo_PADREs_file) <- c('Hpf12', 'Prim5', 'LongPec')
-embryo_PADREs <- lapply(embryo_PADREs_file, rtracklayer::import)
-upsethpf12 <- lapply(peakGranges, function(x) which(embryo_PADREs$Hpf12 %over% x))
-upsetprim5 <- lapply(peakGranges, function(x) which(embryo_PADREs$Prim5 %over% x))
-upsetlongpec <- lapply(peakGranges, function(x) which(embryo_PADREs$LongPec %over% x))
-upset(fromList(upsethpf12), nsets = 11, nintersects = 11, order.by = "freq", 
-      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",
-      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
-upset(fromList(upsetprim5), nsets = 11, nintersects = 11, order.by = "freq", 
-      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",
-      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
-upset(fromList(upsetlongpec), nsets = 11, nintersects = 11, order.by = "freq", 
-      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",  set_size.show = FALSE,
-      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
-
-# visualize the functional transition of CREs from embyros to adults using sankey plot.
-# Read the CREs data of embryonic stages (Obtained from DANIO-CODE track hub)
-segments_1 <- list()
-stage_names <- c("Hpf12", "Prim5", "LongPec")
-library(stringr)
-for(stage in stage_names) {
-  segmentFiles <- str_c("./Adult_Zebrafish_CREs_Annotation/", stage, "_PADREs.bb.bed")
-  segments_Files <- rtracklayer::import(segmentFiles)
-  segments_1[[stage]] <- segments_Files
-}
-sankey_df <- data.frame(Longpec_Element = character(), Brain_Element = character(), Count = numeric(), stringsAsFactors = FALSE)
-for (element in unique(segments_1$LongPec$name)) {
-  longpec_overlap <- subsetByOverlaps(segments_1$LongPec, segments$brain)
-  longpec_overlap_element <- longpec_overlap[longpec_overlap$name == element]
-  brain_overlap_element <- subsetByOverlaps(segments$brain, longpec_overlap_element)
-  element_counts <- table(brain_overlap_element$name)
-  selected_elements <- c("1_TssA", "2_TssFlank1", "3_TssFlank2", "4_EnhA", "5_EnhFlank", "6_Openchrom", "7_Bivalent", "8_cHC", "9_fHC", "10_Quiescent")
-  selected_counts <- element_counts[selected_elements]
-  df <- data.frame(Longpec_Element = element, Brain_Element = names(selected_counts), Value = as.numeric(selected_counts), stringsAsFactors = FALSE)
-  sankey_df <- rbind(sankey_df, df)
-}
-df <- data.frame(Longpec_Element = element, Brain_Element = names(selected_counts), Value = as.numeric(selected_counts), stringsAsFactors = FALSE)
-sankey_df <- rbind(sankey_df, df)
-nodes <- data.frame(name = c(as.character(segments_1$LongPec$name), 
-                             as.character(segments$brain$name)) %>% unique())
-edges <- sankey_df
-edges1 <- edges[!is.na(edges$Value), ]
-rownames(edges1) <- 1:nrow(edges1)
-edges1$IDsource <- match(edges1$Longpec_Element, nodes$name)-1
-edges1$IDtarget <- match(edges1$Brain_Element, nodes$name)-1
-sankey <- sankeyNetwork(Links = edges1,
-              Nodes = nodes,
-              Source = "IDsource",
-              Target = "IDtarget",
-              Value = "Value",
-              NodeID = "name",
-              LinkGroup = 'Longpec_Element',
-              sinksRight = F,
-              nodeWidth = 10,
-              fontSize = 18,
-              nodePadding = 10)
-htmlwidgets::onRender(sankey, jsCode = '
-  function(el, x) {
-    d3.select(el).selectAll(".node text")
-      .attr("x", function(d) { return d.x === 0 ? -6 : 15; })
-      .attr("text-anchor", function(d) { return d.x === 0 ? "end" : "start"; });
-  }
-')
-
-
-# Figure 4
+# Figure 1e
 # Plot the epigenomic feature of CREs by heatmap (Promoter, Enhancer, Open chromatin)
 Enh_Granges <- lapply(seq_along(peakGranges), function(x) {
   tmp <- peakGranges[[x]][peakGranges[[x]]$name == '4_EnhA']
@@ -502,6 +399,120 @@ MetaPlt +
   theme(aspect.ratio = 0.8)
 dev.off()
 
+                               
+# Figure 2b
+# LOLA: The enrichment of embryonic elements in adult elements
+regionDB = loadRegionDB("./Adult_Zebrafish_CREs_Annotation/LOLA_github/")
+regionSetA = readBed('./Adult_Zebrafish_CREs_Annotation/Hpf12_PADREs.bb.bed')
+regionSetB = readBed('./Adult_Zebrafish_CREs_Annotation/Prim5_PADREs.bb.bed')
+regionSetC = readBed('./Adult_Zebrafish_CREs_Annotation/LongPec_PADREs.bb.bed')
+userSets = GRangesList(regionSetA, regionSetB, regionSetC)
+Universe = unlist(userSets)
+locResultsRestricted = runLOLA(userSets, Universe, regionDB, cores=1)
+plotTopLOLAEnrichments(locResultsRestricted)
+locResultsRestricted$cols <- with(locResultsRestricted, factor(ifelse(pValueLog < 10,"<10", 
+                                                                      ifelse(pValueLog >= 10 & pValueLog <= 100, "10-100", ">100")),
+                                                               levels = c("<10", "10-100", ">100")))
+tissue_order <- c("blood_elements", "brain_elements", "colon_elements", "heart_elements", "intestine_elements", "kidney_elements", "liver_elements", "muscle_elements", "skin_elements", "spleen_elements", "testis_elements")
+locResultsRestricted$description <- factor(locResultsRestricted$description, levels = desired_order)
+locResultsRestricted$userSet <- ifelse(locResultsRestricted$userSet == 1, "Hpf12",
+                                       ifelse(locResultsRestricted$userSet == 2, "Prim5",
+                                              ifelse(locResultsRestricted$userSet == 3, "LongPec", locResultsRestricted$userSet)))
+stage_reorder <- c("Hpf12", "Prim5", "LongPec")
+locResultsRestricted$userSet <- factor(locResultsRestricted$userSet, levels = stage_reorder)
+ggplot(locResultsRestricted, aes(x = support/size, y = description)) +
+  geom_point(aes(size = support, color = as.factor(userSet))) +
+  scale_colour_manual("Embryonic stages", values = c("gray", "dark blue", "red")) +
+  xlim(0, 1.02) +
+  labs(size = "Number of shared elements", shape = "Embryonic stages", x = 'EnrichmentRatio', y = 'Adult tissue', title = 'Enrichment of embryonic CREs in adult CREs') +
+  theme_bw() +
+  theme(axis.text.y = element_text(size = 10, face = 'bold'),
+        axis.title.y = element_text(size = 12, face = 'bold'),
+        title = element_text(size = 12, face = 'bold'),
+        axis.text.x = element_text(size = 10, face = 'bold'),
+        axis.title.x = element_text(size = 12, face = 'bold'),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text =  element_text(size = 10)
+  )
+
+
+# Figure 2d
+# UpsetR: The intersections of reused embryonic elements across adult tissues.
+peakFiles <- list.files("./Adult_Zebrafish_CREs_Annotation", pattern = '_PADREs_formal_idr_github_10_chrstart.bed.sorted.bed', full.names = T)
+peakGranges <- lapply(peakFiles, rtracklayer::import)
+names(peakGranges) <- tissue_names
+embryo_PADREs_file <- list.files('./Adult_Zebrafish_CREs_Annotation', pattern = '_PADREs.bb.bed', full.names = TRUE)
+names(embryo_PADREs_file) <- c('Hpf12', 'Prim5', 'LongPec')
+embryo_PADREs <- lapply(embryo_PADREs_file, rtracklayer::import)
+upsethpf12 <- lapply(peakGranges, function(x) which(embryo_PADREs$Hpf12 %over% x))
+upsetprim5 <- lapply(peakGranges, function(x) which(embryo_PADREs$Prim5 %over% x))
+upsetlongpec <- lapply(peakGranges, function(x) which(embryo_PADREs$LongPec %over% x))
+upset(fromList(upsethpf12), nsets = 11, nintersects = 11, order.by = "freq", 
+      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",
+      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
+upset(fromList(upsetprim5), nsets = 11, nintersects = 11, order.by = "freq", 
+      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",
+      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
+upset(fromList(upsetlongpec), nsets = 11, nintersects = 11, order.by = "freq", 
+      mainbar.y.max = 11500, set_size.scale_max = 35000, show.numbers = "yes",  set_size.show = FALSE,
+      keep.order = T, sets = rev(c("brain", "blood", "colon", "heart", "intestine", "kidney", "liver", "muscle", "skin", "spleen", "testis")))
+
+
+# Figure 2c
+# visualize the functional transition of CREs from embyros to adults using sankey plot.
+# Read the CREs data of embryonic stages (Obtained from DANIO-CODE track hub)
+segments_1 <- list()
+stage_names <- c("Hpf12", "Prim5", "LongPec")
+library(stringr)
+for(stage in stage_names) {
+  segmentFiles <- str_c("./Adult_Zebrafish_CREs_Annotation/", stage, "_PADREs.bb.bed")
+  segments_Files <- rtracklayer::import(segmentFiles)
+  segments_1[[stage]] <- segments_Files
+}
+sankey_df <- data.frame(Longpec_Element = character(), Brain_Element = character(), Count = numeric(), stringsAsFactors = FALSE)
+for (element in unique(segments_1$LongPec$name)) {
+  longpec_overlap <- subsetByOverlaps(segments_1$LongPec, segments$brain)
+  longpec_overlap_element <- longpec_overlap[longpec_overlap$name == element]
+  brain_overlap_element <- subsetByOverlaps(segments$brain, longpec_overlap_element)
+  element_counts <- table(brain_overlap_element$name)
+  selected_elements <- c("1_TssA", "2_TssFlank1", "3_TssFlank2", "4_EnhA", "5_EnhFlank", "6_Openchrom", "7_Bivalent", "8_cHC", "9_fHC", "10_Quiescent")
+  selected_counts <- element_counts[selected_elements]
+  df <- data.frame(Longpec_Element = element, Brain_Element = names(selected_counts), Value = as.numeric(selected_counts), stringsAsFactors = FALSE)
+  sankey_df <- rbind(sankey_df, df)
+}
+df <- data.frame(Longpec_Element = element, Brain_Element = names(selected_counts), Value = as.numeric(selected_counts), stringsAsFactors = FALSE)
+sankey_df <- rbind(sankey_df, df)
+nodes <- data.frame(name = c(as.character(segments_1$LongPec$name), 
+                             as.character(segments$brain$name)) %>% unique())
+edges <- sankey_df
+edges1 <- edges[!is.na(edges$Value), ]
+rownames(edges1) <- 1:nrow(edges1)
+edges1$IDsource <- match(edges1$Longpec_Element, nodes$name)-1
+edges1$IDtarget <- match(edges1$Brain_Element, nodes$name)-1
+sankey <- sankeyNetwork(Links = edges1,
+              Nodes = nodes,
+              Source = "IDsource",
+              Target = "IDtarget",
+              Value = "Value",
+              NodeID = "name",
+              LinkGroup = 'Longpec_Element',
+              sinksRight = F,
+              nodeWidth = 10,
+              fontSize = 18,
+              nodePadding = 10)
+htmlwidgets::onRender(sankey, jsCode = '
+  function(el, x) {
+    d3.select(el).selectAll(".node text")
+      .attr("x", function(d) { return d.x === 0 ? -6 : 15; })
+      .attr("text-anchor", function(d) { return d.x === 0 ? "end" : "start"; });
+  }
+')
+
+
+
+
+
+# Figure 3a
 # Calculate the PhastCons conservation score of adult CREs
 phastCons <- rtracklayer::import("https://research.nhgri.nih.gov/manuscripts/Burgess/zebrafish/downloads/NHGRI-1/danRer11/danRer11Tracks/ZF_GC_CC_GF.danRer11.bw")
 seqlevels(phastCons) <- seqlevels(BSgenome.Drerio.UCSC.danRer11)
