@@ -81,6 +81,9 @@ ggplot(all_pivoted_data, aes(State, Mark, fill = Emission)) + geom_tile() +
   ) +
   scale_fill_distiller(palette = "Blues", direction = 1)
 
+
+# Supplementary Figure 1b
+# Prepare the CRE annotation data
 # Assign the studied states from ChromHMM to open chromatin regions
 atacPeakFiles <- list.files("./Adult_Zebrafish_CREs_Annotation", pattern = ".+.atac.rep1_vs_rep2.idr0.05.narrowPeak", full.names = TRUE)
 names(atacPeakFiles) <- tissue_names
@@ -118,8 +121,6 @@ allPeaks_annotation <- lapply(names(allPeaks), function(x) {
 })
 names(allPeaks_annotation) <- tissue_names
 
-
-# Supplementary Figure 1b
 # Prepare the CRE annotation track hub 
 paper_colors <- c("#1F78B4", "#33A02C", "#B2DF8A", "#E31A1C", "#FB9A99", 
                   "#FFA500", "#654321","#7B68EE", "#800080", "#A1A2A3")
@@ -507,9 +508,6 @@ htmlwidgets::onRender(sankey, jsCode = '
       .attr("text-anchor", function(d) { return d.x === 0 ? "end" : "start"; });
   }
 ')
-
-
-
 
 
 # Figure 3a
