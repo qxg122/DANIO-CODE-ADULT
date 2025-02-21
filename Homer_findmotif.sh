@@ -17,4 +17,4 @@ done < /rds/projects/m/muellerf-cage/Qianhong/Adult_Zebrafish_CREs_Annotation/ti
 
 tissue=${arr[$SLURM_ARRAY_TASK_ID]}
 
-findMotifsGenome.pl /rds/projects/m/muellerf-cage/Qianhong/Adult_Zebrafish_CREs_Annotation/${tissue}_PADREs_formal_idr_github_10_chrstart.bed.sorted.bed danRer11 ${tissue}_CRE_motif/ -size 200
+findMotifsGenome.pl /rds/projects/m/muellerf-cage/Qianhong/Adult_Zebrafish_CREs_Annotation/${tissue}_PADREs_formal_idr_github_10_chrstart.bed.sorted.bed danRer11 ${tissue}_CRE_motif/ -size given
